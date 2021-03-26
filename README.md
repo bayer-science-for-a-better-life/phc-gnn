@@ -43,6 +43,7 @@ conda activate phc-gnn
 ```
 Install Pytorch Geometric and this module with pip by executing the bash-script `install_pyg.sh`
 ```
+chmod +x install_pyg.sh
 bash install_pyg.sh
 
 #install this library

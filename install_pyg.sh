@@ -1,3 +1,5 @@
+#!/bin/bash
+
 conda activate phc-gnn
 echo "Installing Pytorch Geometric version 1.6.1  with Pytorch version 1.7.1 and CUDA 10.1"
 # pyG wheels for torch 1.7.1 are the same as for torch 1.7.0 
