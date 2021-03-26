@@ -13,8 +13,8 @@ from itertools import permutations
 class TestDropout(unittest.TestCase):
 
     def test_quaternion_dropout(self):
-        batch_size = 512
-        in_features = 64
+        batch_size = 128
+        in_features = 32
         same = False
         p = 0.3
         q = QTensor(*torch.randn(4, batch_size, in_features))

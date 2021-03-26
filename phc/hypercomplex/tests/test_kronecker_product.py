@@ -10,8 +10,8 @@ class TestBatchedKronecker(unittest.TestCase):
     def test_batched_kronecker(self):
 
         phm_dim = 4
-        out_feats = 64
-        in_feats = 32
+        out_feats = 16
+        in_feats = 8
         A_l, B_l = [torch.randn(phm_dim, phm_dim) for _ in range(phm_dim)],\
                    [torch.randn(out_feats, in_feats) for _ in range(phm_dim)]
 

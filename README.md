@@ -49,6 +49,11 @@ bash install_pyg.sh
 pip install -e .
 ```
 
+Run the implemented pytests in the subdirectories, by executing:
+```
+pytest .
+```
+
 ### Getting started
 Run our example scripts in the `benchmarks/` directory. Make sure to have the `phc-gnn` environment activated.
 For more details, please have a look at `benchmarks/README.md`.

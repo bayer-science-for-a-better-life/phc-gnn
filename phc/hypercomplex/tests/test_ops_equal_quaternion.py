@@ -20,8 +20,8 @@ class TestBatchNorm(unittest.TestCase):
         # Naive batch-normalization for quaternions and phm (with phm_dim=4) should be the same.
 
         phm_dim = 4
-        num_features = 64
-        batch_size = 512
+        num_features = 16
+        batch_size = 128
         quat_bn = QuaternionNorm(type="naive-batch-norm", num_features=num_features).train()
         phm_bn = PHMNorm(type="naive-batch-norm", phm_dim=phm_dim, num_features=num_features).train()
 
@@ -45,13 +45,13 @@ class TestBatchNorm(unittest.TestCase):
 
         distances = []
         for i in range(500):
-            x = torch.randn(4, 512, 64)
+            x = torch.randn(4, batch_size, num_features)
             x_q = QTensor(*x)
-            x_p = x.permute(1, 0, 2).reshape(512, -1)
+            x_p = x.permute(1, 0, 2).reshape(batch_size, -1)
             y_quat = quat_bn(x_q)
             y_phm = phm_bn(x_p)
             y_quat = y_quat.stack(dim=1)
-            y_quat = y_quat.reshape(512, -1)
+            y_quat = y_quat.reshape(batch_size, -1)
             d = (y_phm - y_quat).norm().item()
             distances.append(d)
 
@@ -62,8 +62,8 @@ class TestBatchNorm(unittest.TestCase):
 class TestDropout(unittest.TestCase):
 
     def test_hypercomplex_dropout(self):
-        batch_size = 512
-        in_features = 64
+        batch_size = 128
+        in_features = 32
         phm_dim = 4
         same = False
         p = 0.3
@@ -105,8 +105,8 @@ class TestDropout(unittest.TestCase):
 
     def test_quaternion_hypercomplex_dropout(self):
 
-        batch_size = 512
-        in_features = 64
+        batch_size = 128
+        in_features = 32
         phm_dim = 4
         same = False
         p = 0.3
