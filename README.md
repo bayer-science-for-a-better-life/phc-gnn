@@ -62,14 +62,14 @@ For more details, please have a look at `benchmarks/README.md`.
 ### Reference
 If you make use of the implementations of quaternion or parameterized hypercomplex GNN in your research, please cite our manuscript:
 ```
-@article{
-Parameterized-Hypercomplex-Graph-Neural-Networks-for-Graph-Classification,
-title={Parameterized Hypercomplex Graph Neural Networks for Graph Classification},
-author={Tuan Le, Marco Bertolini, Frank Noé, Djork-Arné Clevert},
-booktitle={ArXiv},
-year={2021},
-url={},
-note={}
+@misc{le2021parameterized,
+      title={Parameterized Hypercomplex Graph Neural Networks for Graph Classification}, 
+      author={Tuan Le and Marco Bertolini and Frank Noé and Djork-Arné Clevert},
+      year={2021},
+      eprint={2103.16584},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2103.16584}
 }
 ```
 
