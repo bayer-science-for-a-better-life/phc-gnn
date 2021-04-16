@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 
-from phc.hypercomplex.kronecker import kronecker_product
+from phc.hypercomplex.kronecker import kronecker_product, kronecker_product_einsum_batched
 from phc.hypercomplex.utils import get_multiplication_matrices, right_cyclic_permutation
 from phc.hypercomplex.inits import phm_init
 from phc.hypercomplex.norm import PHMNorm
@@ -72,7 +72,7 @@ def matvec_product(W: nn.ParameterList, x: torch.Tensor,
     would be to stack the x and bias vector directly as a 1D vector.
     """
     assert len(phm_rule) == len(W)
-    assert x.size(1) == sum([weight.size(1) for weight in W]), (f"x has size(1): {x.size(1)}."
+    assert x.size(-1) == sum([weight.size(1) for weight in W]), (f"x has size(1): {x.size(-1)}."
                                                                 f"Should have {sum([weight.size(1) for weight in W])}")
 
     #H = torch.stack([kronecker_product(Ai, Wi) for Ai, Wi in zip(phm_rule, W)], dim=0).sum(0)
@@ -80,7 +80,8 @@ def matvec_product(W: nn.ParameterList, x: torch.Tensor,
     W = torch.stack([Wi for Wi in W], dim=0)
     H = kronecker_product(A, W).sum(0)
 
-    y = torch.mm(H, x.t()).t()
+    #y = torch.mm(H, x.t()).t()
+    y = torch.matmul(input=x, other=H.t())
     #y = (H @ x.T).T
     if bias is not None:
         bias = torch.cat([b for b in bias], dim=-1)
@@ -190,6 +191,110 @@ class PHMLinear(torch.nn.Module):
                                       self.c_init,
                                       self.learn_phm)
 
+
+"""  Improving PHMLinear  """
+
+
+def matvec_product_new(W: torch.Tensor, x: torch.Tensor,
+                       bias: Optional[torch.Tensor],
+                       phm_rule: Union[torch.Tensor]) -> torch.Tensor:
+    """
+    Functional method to compute the generalized matrix-vector product based on the paper
+    "Parameterization of Hypercomplex Multiplications (2020)"
+    https://openreview.net/forum?id=rcQdycl0zyk
+    y = Hx + b , where W is generated through the sum of kronecker products from the Parameterlist W, i.e.
+
+    W is a an order-3 tensor of size (phm_dim, in_features, out_features)
+    x has shape (batch_size, phm_dim*in_features)
+    phm_rule is an order-3 tensor of shape (phm_dim, phm_dim, phm_dim)
+    H = sum_{i=0}^{d} mul_rule \otimes W[i], where \otimes is the kronecker product
+
+    """
+
+    H = kronecker_product_einsum_batched(phm_rule, W).sum(0)
+    y = torch.matmul(input=x, other=H)
+    if bias is not None:
+        y += bias
+
+    return y
+
+
+class PHMLinearNew(torch.nn.Module):
+    def __init__(self, in_features: int, out_features: int,
+                 phm_dim: int, phm_rule: Union[None, torch.Tensor] = None,
+                 bias: bool = True, w_init: str = "phm", c_init: str = "random",
+                 learn_phm: bool = True) -> None:
+        super(PHMLinearNew, self).__init__()
+        assert w_init in ["phm", "glorot-normal", "glorot-uniform"]
+        assert c_init in ["standard", "random"]
+        assert in_features % phm_dim == 0, f"Argument `in_features`={in_features} is not divisble be `phm_dim`{phm_dim}"
+        assert out_features % phm_dim == 0, f"Argument `out_features`={out_features} is not divisble be `phm_dim`{phm_dim}"
+
+        self.in_features = in_features
+        self.out_features = out_features
+        self.learn_phm = learn_phm
+        self.phm_dim = phm_dim
+
+        self._in_feats_per_axis = in_features // phm_dim
+        self._out_feats_per_axis = out_features // phm_dim
+
+        if phm_rule is not None:
+            self.phm_rule = phm_rule
+        else:
+            self.phm_rule = get_multiplication_matrices(phm_dim, type=c_init)
+
+        self.phm_rule = nn.Parameter(torch.stack([*self.phm_rule], dim=0), requires_grad=learn_phm)
+
+        self.bias_flag = bias
+        self.w_init = w_init
+        self.c_init = c_init
+        self.W = nn.Parameter(torch.Tensor((phm_dim, self._in_feats_per_axis, self._out_feats_per_axis)),
+                              requires_grad=True)
+        if self.bias_flag:
+            self.b = nn.Parameter(torch.Tensor(out_features))
+        else:
+            self.register_parameter("b", None)
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        if self.w_init == "phm":
+            W_init = phm_init(phm_dim=self.phm_dim,
+                              in_features=self._in_feats_per_axis,
+                              out_features=self._out_feats_per_axis, transpose=False)
+            self.W.data = W_init
+
+        elif self.w_init == "glorot-normal":
+            for i in range(self.phm_dim):
+                self.W[i] = glorot_normal(self.W[i])
+        elif self.w_init == "glorot-uniform":
+            for i in range(self.phm_dim):
+                self.W[i] = glorot_uniform(self.W[i])
+        else:
+            raise ValueError
+        if self.bias_flag:
+            self.b.data[:self._out_feats_per_axis] = 0.0
+            self.b.data[(self._out_feats_per_axis+1):] = 0.2
+
+    def forward(self, x: torch.Tensor, phm_rule: Union[None, nn.ParameterList] = None) -> torch.Tensor:
+        # #ToDo modify forward() functional so it can handle shared phm-rule contribution matrices.
+        return matvec_product_new(W=self.W, x=x, bias=self.b, phm_rule=self.phm_rule)
+
+    def __repr__(self):
+        return '{}(in_features={}, out_features={}, ' \
+               'phm_dim={}, ' \
+               'bias={}, w_init={}, c_init={}, ' \
+               'learn_phm={})'.format(self.__class__.__name__,
+                                      self.in_features,
+                                      self.out_features,
+                                      self.phm_dim,
+                                      self.bias_flag,
+                                      self.w_init,
+                                      self.c_init,
+                                      self.learn_phm)
+
+
+""""""
 
 class PHMMLP(nn.Module):
     """ Implementing a 2-layer PHM Multilayer Perceptron """
