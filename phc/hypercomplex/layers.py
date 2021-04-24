@@ -138,7 +138,7 @@ class PHMLinear(torch.nn.Module):
         self.bias_flag = bias
         self.w_init = w_init
         self.c_init = c_init
-        self.W = nn.ParameterList([nn.Parameter(torch.Tensor(out_features, in_features),
+        self.W = nn.ParameterList([nn.Parameter(torch.Tensor(size=(out_features, in_features)),
                                                 requires_grad=True)
                                    for _ in range(phm_dim)])
         if self.bias_flag:
@@ -248,7 +248,7 @@ class PHMLinearNew(torch.nn.Module):
         self.bias_flag = bias
         self.w_init = w_init
         self.c_init = c_init
-        self.W = nn.Parameter(torch.Tensor((phm_dim, self._in_feats_per_axis, self._out_feats_per_axis)),
+        self.W = nn.Parameter(torch.Tensor(size=(phm_dim, self._in_feats_per_axis, self._out_feats_per_axis)),
                               requires_grad=True)
         if self.bias_flag:
             self.b = nn.Parameter(torch.Tensor(out_features))
@@ -266,15 +266,18 @@ class PHMLinearNew(torch.nn.Module):
 
         elif self.w_init == "glorot-normal":
             for i in range(self.phm_dim):
-                self.W[i] = glorot_normal(self.W[i])
+                self.W.data[i] = glorot_normal(self.W.data[i])
         elif self.w_init == "glorot-uniform":
             for i in range(self.phm_dim):
-                self.W[i] = glorot_uniform(self.W[i])
+                self.W.data[i] = glorot_uniform(self.W.data[i])
         else:
             raise ValueError
         if self.bias_flag:
             self.b.data[:self._out_feats_per_axis] = 0.0
             self.b.data[(self._out_feats_per_axis+1):] = 0.2
+
+        #self.phm_rule.data.uniform_(-1.0, 1.0)   # default init with c_init = 'random'
+        self.phm_rule.data.normal_(std=0.1)
 
     def forward(self, x: torch.Tensor, phm_rule: Union[None, nn.ParameterList] = None) -> torch.Tensor:
         # #ToDo modify forward() functional so it can handle shared phm-rule contribution matrices.
@@ -430,4 +433,11 @@ yy = real_trafo(y)
 
 real_trafo = RealTransformer(type="sum", in_features=out_features, phm_dim=phm_dim)
 yyy = real_trafo(y)
+
+
+lin_new = PHMLinearNew(in_features=512, out_features=512, phm_dim=4, learn_phm=True,
+                       w_init="glorot-uniform", c_init="random")
+x = torch.randn(100, 512)
+yyy = lin_new(x)                      
 """
+
