@@ -1,5 +1,12 @@
 # Parameterized Hypercomplex Graph Neural Networks (PHC-GNNs)
 
+PHC-GNNs (Le et al., 2021): https://arxiv.org/abs/2103.16584
+
+PHM Linear Layer Illustration | PHC-GNN Layer Computation Diagram
+---  | ---
+![](figures/phm_illustration.png "Illustration of the PHM-Linear Layer") | ![](figures/phc_gnn_layer.png "Illustration of the PHC-GNN Layer")
+
+
 ### Overview
 Here we provide the implementation of Parameterized Hypercomplex Graph Neural Networks (PHC-GNNs) in [PyTorch Geometric](https://github.com/rusty1s/pytorch_geometric),
 along with 6 minimal execution examples in the `benchmarks/` directory.
