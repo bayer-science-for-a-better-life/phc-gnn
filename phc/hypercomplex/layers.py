@@ -111,12 +111,12 @@ def matvec_product_cat(W: nn.ParameterList, x: torch.Tensor,
     return y
 
 
-class PHMLinear(torch.nn.Module):
+class PHMLinear_Old(torch.nn.Module):
     def __init__(self, in_features: int, out_features: int,
                  phm_dim: int, phm_rule: Union[None, nn.Parameter, nn.ParameterList, list, torch.Tensor] = None,
                  bias: bool = True, w_init: str = "phm", c_init: str = "standard",
                  learn_phm: bool = True) -> None:
-        super(PHMLinear, self).__init__()
+        super(PHMLinear_Old, self).__init__()
         assert w_init in ["phm", "glorot-normal", "glorot-uniform"]
         assert c_init in ["standard", "random"]
         self.in_features = in_features
@@ -219,12 +219,12 @@ def matvec_product_new(W: torch.Tensor, x: torch.Tensor,
     return y
 
 
-class PHMLinearNew(torch.nn.Module):
+class PHMLinear(torch.nn.Module):
     def __init__(self, in_features: int, out_features: int,
                  phm_dim: int, phm_rule: Union[None, torch.Tensor] = None,
                  bias: bool = True, w_init: str = "phm", c_init: str = "random",
                  learn_phm: bool = True) -> None:
-        super(PHMLinearNew, self).__init__()
+        super(PHMLinear, self).__init__()
         assert w_init in ["phm", "glorot-normal", "glorot-uniform"]
         assert c_init in ["standard", "random"]
         assert in_features % phm_dim == 0, f"Argument `in_features`={in_features} is not divisble be `phm_dim`{phm_dim}"
@@ -258,6 +258,7 @@ class PHMLinearNew(torch.nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
+        # weight matrices W_i
         if self.w_init == "phm":
             W_init = phm_init(phm_dim=self.phm_dim,
                               in_features=self._in_feats_per_axis,
@@ -276,8 +277,9 @@ class PHMLinearNew(torch.nn.Module):
             self.b.data[:self._out_feats_per_axis] = 0.0
             self.b.data[(self._out_feats_per_axis+1):] = 0.2
 
-        #self.phm_rule.data.uniform_(-1.0, 1.0)   # default init with c_init = 'random'
-        self.phm_rule.data.normal_(std=0.1)
+        # contribution matrices C_i
+        self.phm_rule.data = torch.stack(get_multiplication_matrices(self.phm_dim, type=self.c_init), dim=0)
+        # self.phm_rule.data.normal_(std=0.1)
 
     def forward(self, x: torch.Tensor, phm_rule: Union[None, nn.ParameterList] = None) -> torch.Tensor:
         # #ToDo modify forward() functional so it can handle shared phm-rule contribution matrices.
