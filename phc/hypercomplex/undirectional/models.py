@@ -70,8 +70,6 @@ class PHMSkipConnectAdd(nn.Module):
 
         # one hypercomplex number consists of phm_dim components, so divide the feature dims by phm_dim
         atom_encoded_dim = atom_encoded_dim // phm_dim
-        mp_layers = [dim // phm_dim for dim in mp_layers]
-        downstream_layers = [dim // phm_dim for dim in downstream_layers]
 
         self.atom_encoded_dim = atom_encoded_dim
         self.naive_encoder = naive_encoder
