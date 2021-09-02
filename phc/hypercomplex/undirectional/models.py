@@ -69,10 +69,9 @@ class PHMSkipConnectAdd(nn.Module):
         self.bond_input_dims = bond_input_dims
 
         # for node and bond embedding that also uses encoders, here need integer division
-        atom_encoded_dim = atom_encoded_dim // phm_dim
+        self.atom_encoded_dim = atom_encoded_dim // phm_dim
         mp_layers_div = [d // phm_dim for d in mp_layers]
 
-        self.atom_encoded_dim = atom_encoded_dim
         self.naive_encoder = naive_encoder
         self.w_init = w_init
         self.c_init = c_init
@@ -313,10 +312,9 @@ class PHMSkipConnectConcat(nn.Module):
         self.bond_input_dims = bond_input_dims
 
         # for node and bond embedding that also uses encoders, here need integer division
-        atom_encoded_dim = atom_encoded_dim // phm_dim
+        self.atom_encoded_dim = atom_encoded_dim // phm_dim
         mp_layers_div = [d // phm_dim for d in mp_layers]
 
-        self.atom_encoded_dim = atom_encoded_dim
         self.naive_encoder = naive_encoder
         self.w_init = w_init
         self.c_init = c_init
