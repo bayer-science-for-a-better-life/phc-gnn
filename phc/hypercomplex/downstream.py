@@ -57,7 +57,7 @@ class PHMDownstreamNet(nn.Module):
                                   bias=bias, w_init=w_init, c_init=c_init)
                         for i in range(len(self.hidden_layers) - 1)]
         # output layer
-        self.affine += [PHMLinear(in_features=self.hidden_layers[-1], out_features=self.out_features,
+        self.affine += [PHMLinear(in_features=self.hidden_layers[-1], out_features=phm_dim * self.out_features,
                                   phm_rule=phm_rule,
                                   phm_dim=self.phm_dim, learn_phm=learn_phm, w_init=w_init, c_init=c_init,
                                   bias=bias)]
@@ -66,7 +66,7 @@ class PHMDownstreamNet(nn.Module):
 
         # transform the output quaternionic vector to real vector with Real_Transformer module
         self.real_trafo_type = real_trafo
-        self.real_trafo = RealTransformer(type=self.real_trafo_type, in_features=self.out_features,
+        self.real_trafo = RealTransformer(type=self.real_trafo_type, in_features=phm_dim * self.out_features,
                                           phm_dim=self.phm_dim, bias=True)
 
         # normalizations

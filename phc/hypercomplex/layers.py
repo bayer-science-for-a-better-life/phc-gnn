@@ -384,7 +384,7 @@ class RealTransformer(torch.nn.Module):
         self.bias_flag = bias
         if self.type == "linear":
             self.affine = torch.nn.Linear(in_features=self.in_features,
-                                          out_features=self.in_features, bias=bias)
+                                          out_features=self.in_features // phm_dim, bias=bias)
         else:
             self.affine = None
 

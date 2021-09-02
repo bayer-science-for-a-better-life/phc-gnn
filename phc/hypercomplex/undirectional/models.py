@@ -156,7 +156,7 @@ class PHMSkipConnectAdd(nn.Module):
         # downstream network
         self.downstream = PHMDownstreamNet(in_features=self.mp_layers[-1],
                                            hidden_layers=self.downstream_layers,
-                                           out_features=phm_dim * self.target_dim,
+                                           out_features=self.target_dim,
                                            phm_rule=self.phm_rule,
                                            phm_dim=phm_dim,
                                            learn_phm=learn_phm,
