@@ -377,7 +377,7 @@ class PHMSkipConnectConcat(nn.Module):
             if i == 0:
                 in_dim = self.input_dim
             else:
-                in_dim = self.mp_layers[i - 1] + self.input_dim
+                in_dim = self.mp_layers[i - 1] // self.phm_dim + self.input_dim
             out_dim = self.mp_layers[i]
             self.convs[i] = PHMMessagePassing(in_features=in_dim, out_features=out_dim, bias=bias,
                                               phm_dim=phm_dim, learn_phm=learn_phm, phm_rule=self.phm_rule,
