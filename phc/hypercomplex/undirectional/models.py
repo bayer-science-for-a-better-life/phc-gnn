@@ -138,7 +138,7 @@ class PHMSkipConnectAdd(nn.Module):
                                               **kwargs)
 
             if self.norm_mp:
-                self.norms[i] = PHMNorm(num_features=out_dim, phm_dim=phm_dim, type=norm_mp)
+                self.norms[i] = PHMNorm(num_features=out_dim // self.phm_dim, phm_dim=phm_dim, type=norm_mp)
 
         if pooling == "globalsum":
             self.pooling = PHMGlobalSumPooling(phm_dim=phm_dim)
@@ -390,7 +390,7 @@ class PHMSkipConnectConcat(nn.Module):
                                               **kwargs)
 
             if self.norm_mp:
-                self.norms[i] = PHMNorm(num_features=out_dim, phm_dim=phm_dim, type=norm_mp)
+                self.norms[i] = PHMNorm(num_features=out_dim // self.phm_dim, phm_dim=phm_dim, type=norm_mp)
 
 
         if pooling == "globalsum":
