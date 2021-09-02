@@ -59,7 +59,7 @@ class PHMSoftAttentionPooling(nn.Module):
         out = self.real_trafo(out)  # "transform" to real-valued
         out = self.sigmoid(out)  # get "probabilities"
         #x = torch.stack([*x.split(split_size=self.embed_dim, dim=-1)], dim=0)
-        x = x.reshape(x.size(0), self.phm_dim, self.embed_dim)
+        x = x.reshape(x.size(0), self.phm_dim, self.embed_dim // self.phm_dim)
         # apply element-wise hadamard product through broadcasting
         out = out.unsqueeze(dim=1)
         x = out * x
