@@ -40,7 +40,7 @@ class PHMSoftAttentionPooling(nn.Module):
         self.learn_phm = learn_phm
         self.real_trafo_type = real_trafo
         self.bias = bias
-        self.linear = PHMLinear(in_features=self.embed_dim, out_features=self.embed_dim, phm_dim=self.phm_dim,
+        self.linear = PHMLinear(in_features=self.embed_dim, out_features=self.embed_dim //phm_dim, phm_dim=self.phm_dim,
                                 phm_rule=phm_rule,
                                 learn_phm=learn_phm, w_init=w_init, c_init=c_init,
                                 bias=bias)
@@ -56,13 +56,10 @@ class PHMSoftAttentionPooling(nn.Module):
 
     def forward(self, x: torch.Tensor, batch: Batch) -> torch.Tensor:
         out = self.linear(x)  # get logits
-        print(out.shape)
         out = self.real_trafo(out)  # "transform" to real-valued
-        print(out.shape)
         out = self.sigmoid(out)  # get "probabilities"
         #x = torch.stack([*x.split(split_size=self.embed_dim, dim=-1)], dim=0)
         x = x.reshape(x.size(0), self.phm_dim, self.embed_dim // self.phm_dim)
-        print(x.shape)
         # apply element-wise hadamard product through broadcasting
         out = out.unsqueeze(dim=1)
         x = out * x
