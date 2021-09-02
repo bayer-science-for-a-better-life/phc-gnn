@@ -237,7 +237,7 @@ class PHMSkipConnectAdd(nn.Module):
 
             hidden_edge_attr = self.bondencoders[i](edge_attr)
             hidden_edge_attr = hidden_edge_attr.reshape(hidden_edge_attr.size(0),
-                                                        self.phm_dim * self.mp_layers[i])
+                                                        self.mp_layers[i])
             x = self.compute_hidden_layer_embedding(conv=self.convs[i], norm=self.norms[i],
                                                     x=x, edge_index=edge_index, edge_attr=hidden_edge_attr,
                                                     dropout_mpnn=self.dropout_mpnn[i], size=size)
@@ -408,7 +408,7 @@ class PHMSkipConnectConcat(nn.Module):
         # downstream network
         self.downstream = PHMDownstreamNet(in_features=self.mp_layers[-1] + self.input_dim,
                                            hidden_layers=self.downstream_layers,
-                                           out_features=self.target_dim,
+                                           out_features=phm_dim * self.target_dim,
                                            phm_dim=phm_dim,
                                            learn_phm=learn_phm,
                                            phm_rule=self.phm_rule,
@@ -486,7 +486,7 @@ class PHMSkipConnectConcat(nn.Module):
                 hidden_edge_attr = hidden_edge_attr.reshape(hidden_edge_attr.size(0), self.phm_dim * self.input_dim)
             else:
                 hidden_edge_attr = hidden_edge_attr.reshape(hidden_edge_attr.size(0),
-                                                            self.phm_dim * (self.mp_layers[i-1] + self.input_dim))
+                                                           self.mp_layers[i-1] + self.input_dim)
 
             x = self.compute_hidden_layer_embedding(conv=self.convs[i], norm=self.norms[i],
                                                     x=x, edge_index=edge_index, edge_attr=hidden_edge_attr,
