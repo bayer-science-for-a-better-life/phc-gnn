@@ -68,8 +68,9 @@ class PHMSkipConnectAdd(nn.Module):
         self.atom_input_dims = atom_input_dims
         self.bond_input_dims = bond_input_dims
 
-        # one hypercomplex number consists of phm_dim components, so divide the feature dims by phm_dim
+        # for node and bond embedding that also uses encoders, here need integer division
         atom_encoded_dim = atom_encoded_dim // phm_dim
+        mp_layers_div = [d // phm_dim for d in mp_layers]
 
         self.atom_encoded_dim = atom_encoded_dim
         self.naive_encoder = naive_encoder
@@ -113,10 +114,10 @@ class PHMSkipConnectAdd(nn.Module):
         # bond/edge embeddings
         if naive_encoder:
             self.bondencoders = [NaivePHMEncoder(out_dim=odim, input_dims=bond_input_dims, phm_dim=phm_dim,
-                                                 combine="sum") for odim in mp_layers]
+                                                 combine="sum") for odim in mp_layers_div]
         else:
             self.bondencoders = [PHMEncoder(out_dim=odim, input_dims=bond_input_dims, phm_dim=phm_dim,
-                                            combine="sum") for odim in mp_layers]
+                                            combine="sum") for odim in mp_layers_div]
 
 
         self.bondencoders = nn.ModuleList(self.bondencoders)
@@ -311,8 +312,9 @@ class PHMSkipConnectConcat(nn.Module):
         self.atom_input_dims = atom_input_dims
         self.bond_input_dims = bond_input_dims
 
-        # one hypercomplex number consists of phm_dim components, so divide the feature dims by phm_dim
+        # for node and bond embedding that also uses encoders, here need integer division
         atom_encoded_dim = atom_encoded_dim // phm_dim
+        mp_layers_div = [d // phm_dim for d in mp_layers]
 
         self.atom_encoded_dim = atom_encoded_dim
         self.naive_encoder = naive_encoder
@@ -364,7 +366,7 @@ class PHMSkipConnectConcat(nn.Module):
             if i == 0:
                 out_dim = self.input_dim
             else:
-                out_dim = self.mp_layers[i - 1] + self.input_dim
+                out_dim = self.mp_layers[i - 1] // phm_dim + self.input_dim
 
             self.bondencoders.append(
                 module(input_dims=bond_input_dims, out_dim=out_dim, phm_dim=phm_dim, combine="sum")
@@ -377,7 +379,7 @@ class PHMSkipConnectConcat(nn.Module):
             if i == 0:
                 in_dim = self.input_dim
             else:
-                in_dim = self.mp_layers[i - 1] // self.phm_dim + self.input_dim
+                in_dim = self.mp_layers[i - 1] + self.input_dim
             out_dim = self.mp_layers[i]
             self.convs[i] = PHMMessagePassing(in_features=in_dim, out_features=out_dim, bias=bias,
                                               phm_dim=phm_dim, learn_phm=learn_phm, phm_rule=self.phm_rule,
