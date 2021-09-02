@@ -12,7 +12,7 @@ class NaivePHMNorm(torch.nn.Module):
         super(NaivePHMNorm, self).__init__()
 
         self.phm_dim = phm_dim
-        self.num_features = num_features
+        self.num_features = num_features // phm_dim
         self.momentum = momentum
         self.affine = affine
         self.eps = eps
