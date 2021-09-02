@@ -104,10 +104,11 @@ class PHMSkipConnectAdd(nn.Module):
 
         # atom embedding
         if naive_encoder:
-            self.atomencoder = NaivePHMEncoder(out_dim=atom_encoded_dim, input_dims=atom_input_dims, phm_dim=phm_dim,
+            self.atomencoder = NaivePHMEncoder(out_dim=self.atom_encoded_dim,
+                                               input_dims=atom_input_dims, phm_dim=phm_dim,
                                                combine="sum")
         else:
-            self.atomencoder = PHMEncoder(out_dim=atom_encoded_dim, input_dims=atom_input_dims, phm_dim=phm_dim,
+            self.atomencoder = PHMEncoder(out_dim=self.atom_encoded_dim, input_dims=atom_input_dims, phm_dim=phm_dim,
                                           combine="sum")
 
         # bond/edge embeddings
@@ -345,11 +346,11 @@ class PHMSkipConnectConcat(nn.Module):
 
         # atom embedding
         if naive_encoder:
-            self.atomencoder = NaivePHMEncoder(out_dim=atom_encoded_dim, input_dims=atom_input_dims,
+            self.atomencoder = NaivePHMEncoder(out_dim=self.atom_encoded_dim, input_dims=atom_input_dims,
                                                phm_dim=phm_dim,
                                                combine="sum")
         else:
-            self.atomencoder = PHMEncoder(out_dim=atom_encoded_dim, input_dims=atom_input_dims, phm_dim=phm_dim,
+            self.atomencoder = PHMEncoder(out_dim=self.atom_encoded_dim, input_dims=atom_input_dims, phm_dim=phm_dim,
                                           combine="sum")
 
 
@@ -362,9 +363,9 @@ class PHMSkipConnectConcat(nn.Module):
 
         for i in range(len(mp_layers)):
             if i == 0:
-                out_dim = self.input_dim
+                out_dim = self.atom_encoded_dim
             else:
-                out_dim = self.mp_layers[i - 1] // phm_dim + self.input_dim
+                out_dim = self.mp_layers[i - 1] // phm_dim + self.atom_encoded_dim
 
             self.bondencoders.append(
                 module(input_dims=bond_input_dims, out_dim=out_dim, phm_dim=phm_dim, combine="sum")
