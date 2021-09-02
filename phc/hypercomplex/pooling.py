@@ -58,9 +58,10 @@ class PHMSoftAttentionPooling(nn.Module):
         out = self.linear(x)  # get logits
         out = self.real_trafo(out)  # "transform" to real-valued
         out = self.sigmoid(out)  # get "probabilities"
-        print(x.shape)
-        print(out.shape)
+        x = x.view(x.size(0), self.phm_dim, self.embed_dim // self.phm_dim)
+        out = out.unsqueeze(dim=1)
         x = out * x
+        x = x.view(x.size(0), self.embed_dim)
         x = self.sum_pooling(x, batch=batch)
         return x
 
