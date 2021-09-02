@@ -12,12 +12,12 @@ class NaivePHMNorm(torch.nn.Module):
         super(NaivePHMNorm, self).__init__()
 
         self.phm_dim = phm_dim
-        self.num_features = num_features
+        self.num_features = num_features // phm_dim
         self.momentum = momentum
         self.affine = affine
         self.eps = eps
         self.track_running_stats = track_running_stats
-        self.bn = nn.ModuleList([nn.BatchNorm1d(num_features, eps, momentum, affine, track_running_stats)
+        self.bn = nn.ModuleList([nn.BatchNorm1d(self.num_features, eps, momentum, affine, track_running_stats)
                                 for _ in range(phm_dim)])
 
         self.reset_parameters()

@@ -68,10 +68,10 @@ class PHMSkipConnectAdd(nn.Module):
         self.atom_input_dims = atom_input_dims
         self.bond_input_dims = bond_input_dims
 
-        # one hypercomplex number consists of phm_dim components, so divide the feature dims by phm_dim
-        atom_encoded_dim = atom_encoded_dim // phm_dim
+        # for node and bond embedding that also uses encoders, here need integer division
+        self.atom_encoded_dim = atom_encoded_dim // phm_dim
+        mp_layers_div = [d // phm_dim for d in mp_layers]
 
-        self.atom_encoded_dim = atom_encoded_dim
         self.naive_encoder = naive_encoder
         self.w_init = w_init
         self.c_init = c_init
@@ -104,19 +104,20 @@ class PHMSkipConnectAdd(nn.Module):
 
         # atom embedding
         if naive_encoder:
-            self.atomencoder = NaivePHMEncoder(out_dim=atom_encoded_dim, input_dims=atom_input_dims, phm_dim=phm_dim,
+            self.atomencoder = NaivePHMEncoder(out_dim=self.atom_encoded_dim,
+                                               input_dims=atom_input_dims, phm_dim=phm_dim,
                                                combine="sum")
         else:
-            self.atomencoder = PHMEncoder(out_dim=atom_encoded_dim, input_dims=atom_input_dims, phm_dim=phm_dim,
+            self.atomencoder = PHMEncoder(out_dim=self.atom_encoded_dim, input_dims=atom_input_dims, phm_dim=phm_dim,
                                           combine="sum")
 
         # bond/edge embeddings
         if naive_encoder:
             self.bondencoders = [NaivePHMEncoder(out_dim=odim, input_dims=bond_input_dims, phm_dim=phm_dim,
-                                                 combine="sum") for odim in mp_layers]
+                                                 combine="sum") for odim in mp_layers_div]
         else:
             self.bondencoders = [PHMEncoder(out_dim=odim, input_dims=bond_input_dims, phm_dim=phm_dim,
-                                            combine="sum") for odim in mp_layers]
+                                            combine="sum") for odim in mp_layers_div]
 
 
         self.bondencoders = nn.ModuleList(self.bondencoders)
@@ -236,7 +237,7 @@ class PHMSkipConnectAdd(nn.Module):
 
             hidden_edge_attr = self.bondencoders[i](edge_attr)
             hidden_edge_attr = hidden_edge_attr.reshape(hidden_edge_attr.size(0),
-                                                        self.phm_dim * self.mp_layers[i])
+                                                        self.mp_layers[i])
             x = self.compute_hidden_layer_embedding(conv=self.convs[i], norm=self.norms[i],
                                                     x=x, edge_index=edge_index, edge_attr=hidden_edge_attr,
                                                     dropout_mpnn=self.dropout_mpnn[i], size=size)
@@ -311,12 +312,10 @@ class PHMSkipConnectConcat(nn.Module):
         self.atom_input_dims = atom_input_dims
         self.bond_input_dims = bond_input_dims
 
-        # one hypercomplex number consists of phm_dim components, so divide the feature dims by phm_dim
-        atom_encoded_dim = atom_encoded_dim // phm_dim
-        mp_layers = [dim // phm_dim for dim in mp_layers]
-        downstream_layers = [dim // phm_dim for dim in downstream_layers]
+        # for node and bond embedding that also uses encoders, here need integer division
+        self.atom_encoded_dim = atom_encoded_dim // phm_dim
+        mp_layers_div = [d // phm_dim for d in mp_layers]
 
-        self.atom_encoded_dim = atom_encoded_dim
         self.naive_encoder = naive_encoder
         self.w_init = w_init
         self.c_init = c_init
@@ -347,11 +346,11 @@ class PHMSkipConnectConcat(nn.Module):
 
         # atom embedding
         if naive_encoder:
-            self.atomencoder = NaivePHMEncoder(out_dim=atom_encoded_dim, input_dims=atom_input_dims,
+            self.atomencoder = NaivePHMEncoder(out_dim=self.atom_encoded_dim, input_dims=atom_input_dims,
                                                phm_dim=phm_dim,
                                                combine="sum")
         else:
-            self.atomencoder = PHMEncoder(out_dim=atom_encoded_dim, input_dims=atom_input_dims, phm_dim=phm_dim,
+            self.atomencoder = PHMEncoder(out_dim=self.atom_encoded_dim, input_dims=atom_input_dims, phm_dim=phm_dim,
                                           combine="sum")
 
 
@@ -364,9 +363,9 @@ class PHMSkipConnectConcat(nn.Module):
 
         for i in range(len(mp_layers)):
             if i == 0:
-                out_dim = self.input_dim
+                out_dim = self.atom_encoded_dim
             else:
-                out_dim = self.mp_layers[i - 1] + self.input_dim
+                out_dim = self.mp_layers[i - 1] // phm_dim + self.atom_encoded_dim
 
             self.bondencoders.append(
                 module(input_dims=bond_input_dims, out_dim=out_dim, phm_dim=phm_dim, combine="sum")
@@ -409,7 +408,7 @@ class PHMSkipConnectConcat(nn.Module):
         # downstream network
         self.downstream = PHMDownstreamNet(in_features=self.mp_layers[-1] + self.input_dim,
                                            hidden_layers=self.downstream_layers,
-                                           out_features=self.target_dim,
+                                           out_features=phm_dim * self.target_dim,
                                            phm_dim=phm_dim,
                                            learn_phm=learn_phm,
                                            phm_rule=self.phm_rule,
@@ -487,7 +486,7 @@ class PHMSkipConnectConcat(nn.Module):
                 hidden_edge_attr = hidden_edge_attr.reshape(hidden_edge_attr.size(0), self.phm_dim * self.input_dim)
             else:
                 hidden_edge_attr = hidden_edge_attr.reshape(hidden_edge_attr.size(0),
-                                                            self.phm_dim * (self.mp_layers[i-1] + self.input_dim))
+                                                           self.mp_layers[i-1] + self.input_dim)
 
             x = self.compute_hidden_layer_embedding(conv=self.convs[i], norm=self.norms[i],
                                                     x=x, edge_index=edge_index, edge_attr=hidden_edge_attr,

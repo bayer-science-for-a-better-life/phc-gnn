@@ -58,12 +58,10 @@ class PHMSoftAttentionPooling(nn.Module):
         out = self.linear(x)  # get logits
         out = self.real_trafo(out)  # "transform" to real-valued
         out = self.sigmoid(out)  # get "probabilities"
-        #x = torch.stack([*x.split(split_size=self.embed_dim, dim=-1)], dim=0)
-        x = x.reshape(x.size(0), self.phm_dim, self.embed_dim)
-        # apply element-wise hadamard product through broadcasting
+        x = x.view(x.size(0), self.phm_dim, self.embed_dim // self.phm_dim)
         out = out.unsqueeze(dim=1)
         x = out * x
-        x = x.reshape(x.size(0), self.phm_dim*self.embed_dim)
+        x = x.view(x.size(0), self.embed_dim)
         x = self.sum_pooling(x, batch=batch)
         return x
 
